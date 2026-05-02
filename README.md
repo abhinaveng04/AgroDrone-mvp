@@ -26,8 +26,6 @@ The system is a closed-loop autonomous pipeline:
 
 An interactive browser-based simulation of the full system pipeline.
 
-**[➜ Open `AgroDrone_MVP.html` in any browser — no installation needed]**
-
 ### What the MVP demonstrates
 
 | Feature | Description |
@@ -175,27 +173,6 @@ agrodrone/
 ├── 0251CSML304_AbhinavGupta_AI_Report.pdf  # Full assignment report
 ├── README.md                   # This file
 ```
-
----
-
-## 🚀 Running the MVP
-
-**No installation. No server. No dependencies.**
-
-```bash
-# Clone the repo
-git clone https://github.com/your-username/agrodrone.git
-cd agrodrone
-
-# Open the MVP
-open AgroDrone_MVP.html        # macOS
-start AgroDrone_MVP.html       # Windows
-xdg-open AgroDrone_MVP.html   # Linux
-```
-
-Or just double-click `AgroDrone_MVP.html` in your file explorer.
-
----
 
 ## 📊 Complexity Analysis
 
