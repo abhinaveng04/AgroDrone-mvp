@@ -3,7 +3,7 @@
 > **AI-powered drone & satellite precision agriculture platform**  
 > Integrating Fuzzy Logic · A\* Coverage Path Planning · Bayesian Inference · IoT Sensor Networks
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-View%20MVP-blue?style=flat-square)](https://your-demo-link.com)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-View%20MVP-blue?style=flat-square)]([https://your-demo-link.com](https://agro-drone-mvp.vercel.app/))
 [![Assignment](https://img.shields.io/badge/Course-Artificial%20Intelligence-green?style=flat-square)]()
 [![Institute](https://img.shields.io/badge/Institute-NIET%2C%20Greater%20Noida-orange?style=flat-square)]()
 [![AI Modules](https://img.shields.io/badge/AI%20Modules-1%2C%203%20%26%204-purple?style=flat-square)]()
