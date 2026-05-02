@@ -172,7 +172,7 @@ P(Outbreak | NDVI_Drop=T, Rainfall=High, Humidity=High) = 0.91
 ```
 agrodrone/
 ├── AgroDrone_MVP.html          # ← Interactive simulation (open in browser)
-├── AI_Assignment_Report.docx   # Full assignment report
+├── 0251CSML304_AbhinavGupta_AI_Report.pdf  # Full assignment report
 ├── README.md                   # This file
 ```
 
