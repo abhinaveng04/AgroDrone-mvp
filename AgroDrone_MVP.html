@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgroDrone MVP — Autonomous Crop Disease Monitoring</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #ffffff;
+      --bg2: #f5f5f0;
+      --bg3: #eeede8;
+      --text: #1a1a18;
+      --text2: #5a5a55;
+      --text3: #8a8a85;
+      --border: rgba(0, 0, 0, 0.12);
+      --border2: rgba(0, 0, 0, 0.20);
+      --success: #1a6b1e;
+      --success-bg: #eaf3de;
+      --warn: #7a5500;
+      --warn-bg: #faeeda;
+      --danger: #8b1a1a;
+      --danger-bg: #fcebeb;
+      --info: #0c447c;
+      --info-bg: #e6f1fb;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1c;
+        --bg2: #2a2a28;
+        --bg3: #333330;
+        --text: #e8e8e0;
+        --text2: #a0a09a;
+        --text3: #6a6a65;
+        --border: rgba(255, 255, 255, 0.10);
+        --border2: rgba(255, 255, 255, 0.18);
+        --success: #7dc882;
+        --success-bg: #173404;
+        --warn: #f0c060;
+        --warn-bg: #412402;
+        --danger: #f09595;
+        --danger-bg: #501313;
+        --info: #85b7eb;
+        --info-bg: #042c53;
+      }
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg3);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .page-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* Page header */
+    .page-header {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .page-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .page-header p {
+      font-size: 12px;
+      color: var(--text3);
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-right: 6px;
+      margin-top: 6px;
+      background: var(--info-bg);
+      color: var(--info);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .slabel {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text3);
+      margin-bottom: 8px;
+    }
+
+    /* Status bar */
+    #sbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+    }
+
+    .stitle {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .ssub {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .smets {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .mi {
+      font-size: 11px;
+      color: var(--text2);
+    }
+
+    .mi span {
+      font-weight: 600;
+      color: var(--text);
+      font-family: var(--mono);
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+    }
+
+    .bidl {
+      background: var(--bg2);
+      color: var(--text2);
+      border: 0.5px solid var(--border2);
+    }
+
+    .bact {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .bpau {
+      background: var(--warn-bg);
+      color: var(--warn);
+    }
+
+    .bcmp {
+      background: var(--info-bg);
+      color: var(--info);
+    }
+
+    /* Main layout */
+    #mlay {
+      display: grid;
+      grid-template-columns: 1fr 256px;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    /* Farm grid */
+    #fgrid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 3px;
+      margin-bottom: 10px;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 4px;
+      position: relative;
+      transition: background 0.35s, transform 0.2s;
+      border: 0.5px solid transparent;
+      cursor: default;
+    }
+
+    .cell.unvis {
+      background: var(--bg2);
+      border-color: var(--border);
+    }
+
+    .cell.hlth {
+      background: #3d8b41;
+    }
+
+    .cell.lw {
+      background: #b8941e;
+    }
+
+    .cell.mod {
+      background: #c96a20;
+    }
+
+    .cell.hgh {
+      background: #b83232;
+    }
+
+    .cell.skip {
+      background: #4a6b9e;
+    }
+
+    .cell.drone {
+      background: #1d4ed8;
+      transform: scale(1.12);
+      z-index: 10;
+      border-color: #3b82f6;
+    }
+
+    @keyframes dp {
+
+      0%,
+      100% {
+        opacity: .15
+      }
+
+      50% {
+        opacity: .55
+      }
+    }
+
+    .cell.drone::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 4px;
+      animation: dp .9s ease-in-out infinite;
+      background: #fff;
+    }
+
+    .dlbl {
+      position: absolute;
+      bottom: 1px;
+      right: 2px;
+      font-size: 7px;
+      color: rgba(255, 255, 255, .85);
+      font-family: var(--mono);
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    /* Legend */
+    #leg {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .li {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: var(--text2);
+    }
+
+    .ld {
+      width: 9px;
+      height: 9px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* Controls */
+    #ctrls {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 7px 16px;
+      border-radius: var(--radius-sm);
+      border: 0.5px solid var(--border2);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--bg2);
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    button#bst {
+      background: var(--info-bg);
+      color: var(--info);
+      border-color: var(--info);
+      font-weight: 600;
+    }
+
+    button#bst:hover:not(:disabled) {
+      opacity: .85;
+    }
+
+    /* Right panel */
+    #rpan {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Sensors */
+    .srow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 0.5px solid var(--border);
+      gap: 8px;
+    }
+
+    .srow:last-child {
+      border-bottom: none;
+    }
+
+    .sname {
+      font-size: 11px;
+      color: var(--text2);
+      min-width: 60px;
+    }
+
+    .sbar2 {
+      flex: 1;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--bg3);
+      overflow: hidden;
+    }
+
+    .sfill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .6s, background .6s;
+    }
+
+    .sval {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: var(--mono);
+      min-width: 48px;
+      text-align: right;
+    }
+
+    /* Fuzzy */
+    .fout {
+      background: var(--bg2);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-top: 8px;
+    }
+
+    .fdose {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: var(--mono);
+    }
+
+    .fsub {
+      font-size: 10px;
+      color: var(--text2);
+      margin-top: 3px;
+    }
+
+    .fstat {
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    .sld {
+      margin-bottom: 10px;
+    }
+
+    .sldhd {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text2);
+      margin-bottom: 4px;
+    }
+
+    .sldv {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: #1d4ed8;
+      height: 4px;
+      cursor: pointer;
+    }
+
+    /* Bayes */
+    .btk {
+      height: 7px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--bg3);
+      margin: 4px 0 3px;
+    }
+
+    .bfl {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .8s, background .8s;
+    }
+
+    .bvrd {
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    .bsub {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 3px;
+    }
+
+    /* Log */
+    #loge {
+      height: 110px;
+      overflow-y: auto;
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .le {
+      display: flex;
+      gap: 8px;
+      padding: 2px 0;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .lt {
+      color: var(--text3);
+      flex-shrink: 0;
+    }
+
+    .lm {
+      color: var(--text2);
+    }
+
+    .lm.w {
+      color: var(--warn);
+    }
+
+    .lm.d {
+      color: var(--danger);
+    }
+
+    .lm.s {
+      color: var(--success);
+    }
+
+    .lm.i {
+      color: var(--info);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 0.5px solid var(--border);
+      font-size: 10px;
+      color: var(--text3);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 640px) {
+      #mlay {
+        grid-template-columns: 1fr;
+      }
+
+      .smets {
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-wrap">
+
+    <div class="page-header">
+      <h1>AgroDrone — Autonomous Crop Disease Monitoring System</h1>
+      <p>MVP Prototype</p>
+      <div style="margin-top:6px">
+        <span class="tag">A* Coverage Path Planning</span>
+        <span class="tag">Expert System KB</span>
+        <span class="tag">Fuzzy Logic + Bayesian Network</span>
+        <span class="tag">IoT Sensor Fusion</span>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="sbar">
+      <div>
+        <div class="stitle">AgroDrone Mission Control</div>
+        <div class="ssub">LEO Satellite + Drone Swarm + Fuzzy Inference · Simulation Mode</div>
+      </div>
+      <div class="smets">
+        <div class="mi">Battery: <span id="batt-hdr">100%</span></div>
+        <div class="mi">Coverage: <span id="prog">0/70</span></div>
+        <div class="mi">Diseased: <span id="dcount">0</span></div>
+        <div class="mi">Pesticide: <span id="pused">0.0 L</span></div>
+      </div>
+      <span id="mbadge" class="badge bidl">STANDBY</span>
+    </div>
+
+    <!-- Main Layout -->
+    <div id="mlay">
+
+      <!-- Farm Grid -->
+      <div class="card">
+        <div class="slabel">Farm Grid — 10×7 (5m×5m cells) · Boustrophedon + A* Path</div>
+        <div id="fgrid"></div>
+        <div id="leg">
+          <div class="li">
+            <div class="ld" style="background:var(--bg2);border:.5px solid var(--border2)"></div>Unvisited
+          </div>
+          <div class="li">
+            <div class="ld" style="background:#3d8b41"></div>Healthy
+          </div>
+          <div class="li">
+            <div class="ld" style="background:#b8941e"></div>Low infection
+          </div>
+          <div class="li">
+            <div class="ld" style="background:#c96a20"></div>Moderate
+          </div>
+          <div class="li">
+            <div class="ld" style="background:#b83232"></div>High / Severe
+          </div>
+          <div class="li">
+            <div class="ld" style="background:#4a6b9e"></div>Wind abort
+          </div>
+          <div class="li">
+            <div class="ld" style="background:#1d4ed8"></div>Drone position
+          </div>
+        </div>
+        <div id="ctrls">
+          <button id="bst" onclick="startMission()">▶ Start Mission</button>
+          <button id="bpa" onclick="pauseMission()" disabled>Pause</button>
+          <button onclick="resetMission()">Reset</button>
+        </div>
+      </div>
+
+      <!-- Right Panel -->
+      <div id="rpan">
+
+        <!-- IoT Sensors -->
+        <div class="card">
+          <div class="slabel">IoT Sensor Telemetry</div>
+          <div class="srow"><span class="sname">Wind</span>
+            <div class="sbar2">
+              <div class="sfill" id="bw" style="background:#3b8bd4;width:20%"></div>
+            </div><span class="sval" id="vw">2.1 m/s</span>
+          </div>
+          <div class="srow"><span class="sname">Humidity</span>
+            <div class="sbar2">
+              <div class="sfill" id="bh" style="background:#5dcaa5;width:65%"></div>
+            </div><span class="sval" id="vh">65%</span>
+          </div>
+          <div class="srow"><span class="sname">Temp</span>
+            <div class="sbar2">
+              <div class="sfill" id="bt2" style="background:#ef9f27;width:52%"></div>
+            </div><span class="sval" id="vt">28.5°C</span>
+          </div>
+          <div class="srow"><span class="sname">NDVI</span>
+            <div class="sbar2">
+              <div class="sfill" id="bn" style="background:#639922;width:72%"></div>
+            </div><span class="sval" id="vn">0.72</span>
+          </div>
+        </div>
+
+        <!-- Fuzzy Logic -->
+        <div class="card">
+          <div class="slabel">Fuzzy Logic Inference Engine</div>
+          <div class="sld">
+            <div class="sldhd"><span>Leaf Discolouration</span><span class="sldv"><span id="dv">38</span>%</span></div>
+            <input type="range" min="0" max="100" value="38" step="1" id="dsl" oninput="updateFuzzy()">
+          </div>
+          <div class="sld">
+            <div class="sldhd"><span>Wind Speed</span><span class="sldv"><span id="wv">1.5</span> m/s</span></div>
+            <input type="range" min="0" max="10" value="1.5" step="0.1" id="wsl" oninput="updateFuzzy()">
+          </div>
+          <div class="fout">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:3px">COA Defuzzification → Computed Dose</div>
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span class="fdose" id="fdose">10.2</span>
+              <span style="font-size:12px;color:var(--text2)">ml/m²</span>
+            </div>
+            <div class="fsub">Severity: <span id="fsev" style="font-weight:600;color:var(--text)">Moderate</span> ·
+              Wind: <span id="fwind" style="font-weight:600">Calm</span></div>
+            <div class="fstat" id="fst" style="color:var(--success)">✓ Spray enabled</div>
+          </div>
+        </div>
+
+        <!-- Bayesian -->
+        <div class="card">
+          <div class="slabel">Bayesian Disease Prediction</div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px">
+            <span>P(Outbreak | NDVI_Drop, Humidity)</span>
+            <span style="font-weight:600;font-family:var(--mono)" id="bprob">—</span>
+          </div>
+          <div class="btk">
+            <div class="bfl" id="bfill" style="width:0%;background:#3d8b41"></div>
+          </div>
+          <div class="bvrd" id="bvrd" style="color:var(--text3)">Awaiting field data…</div>
+          <div class="bsub">Updates live as drone surveys each cell</div>
+        </div>
+
+      </div><!-- /rpan -->
+    </div><!-- /mlay -->
+
+    <!-- Mission Log -->
+    <div class="card">
+      <div class="slabel" style="margin-bottom:8px">Mission Event Log</div>
+      <div id="loge">
+        <div class="le"><span class="lt">00:00</span><span class="lm i">System initialized. Farm grid 10×7 loaded.
+            Satellite NDVI map ingested.</span></div>
+        <div class="le"><span class="lt">00:00</span><span class="lm">A* boustrophedon path planned — 70 cells queued.
+            Press Start Mission.</span></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <strong>Autonomous Agentic Drone-Based &amp; Satellite Crop Disease Monitoring System</strong><br>
+      Integrating Fuzzy Logic · A* Coverage Path Planning · Bayesian Inference · IoT Sensor Networks<br>
+    </div>
+
+  </div><!-- /page-wrap -->
+
+  <script>
+    const R = 7, C = 10, TOT = R * C;
+    let running = false, paused = false, curCell = 0, interval = null, logSec = 0, battery = 100, pestUsed = 0, diseased = 0, phase = 0;
+
+    const rnd = (a, b) => Math.random() * (b - a) + a;
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    const farm = [];
+    for (let i = 0; i < TOT; i++) {
+      const r = Math.random();
+      let disc = r < .44 ? rnd(0, 12) : r < .70 ? rnd(10, 30) : r < .86 ? rnd(28, 55) : r < .94 ? rnd(50, 72) : rnd(68, 95);
+      farm.push({ disc: Math.round(disc), wind: parseFloat(rnd(.4, 7).toFixed(1)), visited: false, dose: 0, skip: false });
+    }
+
+    function boust() {
+      const p = [];
+      for (let r = 0; r < R; r++) {
+        if (r % 2 === 0) for (let c = 0; c < C; c++)p.push(r * C + c);
+        else for (let c = C - 1; c >= 0; c--)p.push(r * C + c);
+      }
+      return p;
+    }
+    const path = boust();
+
+    function buildGrid() {
+      const g = document.getElementById('fgrid'); g.innerHTML = '';
+      for (let i = 0; i < TOT; i++) {
+        const d = document.createElement('div');
+        d.className = 'cell unvis'; d.id = 'c' + i; g.appendChild(d);
+      }
+    }
+    buildGrid();
+
+    function trimf(x, a, b, c) { return Math.max(0, Math.min((x - a) / (b - a + 1e-9), (c - x) / (c - b + 1e-9))); }
+    function trapmf(x, a, b, c, d) {
+      if (x <= a || x >= d) return 0; if (x >= b && x <= c) return 1;
+      return x < b ? (x - a) / (b - a + 1e-9) : (d - x) / (d - c + 1e-9);
+    }
+
+    function fuzzy(disc, wind) {
+      const sn = trapmf(disc, 0, 0, 3, 12), sl = trimf(disc, 5, 20, 37), sm = trimf(disc, 22, 40, 60);
+      const sh = trimf(disc, 45, 63, 80), ss = trapmf(disc, 65, 80, 100, 100);
+      const wc = trapmf(wind, 0, 0, 2, 4.5), wb = trimf(wind, 2, 4.5, 7), ww = trapmf(wind, 5, 7, 10, 10);
+      const rules = [
+        { ctr: 0, str: sn }, { ctr: 4, str: Math.min(sl, wc) }, { ctr: 2, str: Math.min(sl, wb) },
+        { ctr: 10, str: Math.min(sm, wc) }, { ctr: 6, str: Math.min(sm, wb) },
+        { ctr: 18, str: Math.min(sh, wc) }, { ctr: 11, str: Math.min(sh, wb) },
+        { ctr: 25, str: Math.min(ss, wc) }, { ctr: 17, str: Math.min(ss, wb) }, { ctr: 0, str: ww }
+      ];
+      const num = rules.reduce((s, r) => s + r.ctr * r.str, 0);
+      const den = rules.reduce((s, r) => s + r.str, 0);
+      const dose = den < .001 ? 0 : num / den;
+      const sevs = [[sn, 'None'], [sl, 'Low'], [sm, 'Moderate'], [sh, 'High'], [ss, 'Severe']];
+      const winds = [[wc, 'Calm'], [wb, 'Breezy'], [ww, 'Windy']];
+      return {
+        dose: parseFloat(dose.toFixed(1)),
+        sev: sevs.reduce((a, b) => b[0] > a[0] ? b : a)[1],
+        wc: winds.reduce((a, b) => b[0] > a[0] ? b : a)[1],
+        ok: wind < 5
+      };
+    }
+
+    function updateFuzzy() {
+      const d = parseFloat(document.getElementById('dsl').value);
+      const w = parseFloat(document.getElementById('wsl').value);
+      document.getElementById('dv').textContent = d;
+      document.getElementById('wv').textContent = w.toFixed(1);
+      const r = fuzzy(d, w);
+      document.getElementById('fdose').textContent = r.dose.toFixed(1);
+      document.getElementById('fsev').textContent = r.sev;
+      document.getElementById('fwind').textContent = r.wc;
+      const st = document.getElementById('fst');
+      if (!r.ok) { st.style.color = 'var(--warn)'; st.textContent = '⚠ Spray SUSPENDED — wind > 5 m/s'; }
+      else if (r.dose < 0.5) { st.style.color = 'var(--text3)'; st.textContent = '— No treatment required'; }
+      else { st.style.color = 'var(--success)'; st.textContent = '✓ Spray enabled — ' + r.dose.toFixed(1) + ' ml/m²'; }
+    }
+    updateFuzzy();
+
+    function cellClass(i) {
+      const f = farm[i];
+      if (!f.visited) return 'unvis';
+      if (f.skip) return 'skip';
+      if (f.dose <= 2) return 'hlth';
+      if (f.dose <= 8) return 'lw';
+      if (f.dose <= 16) return 'mod';
+      return 'hgh';
+    }
+
+    function renderCell(i, isDrone) {
+      const el = document.getElementById('c' + i); if (!el) return;
+      el.className = 'cell ' + (isDrone ? 'drone' : cellClass(i));
+      if (!isDrone && farm[i].visited && farm[i].dose > 0)
+        el.innerHTML = '<span class="dlbl">' + farm[i].dose.toFixed(0) + '</span>';
+      else el.innerHTML = '';
+    }
+
+    function updateSensors(w, d) {
+      phase += .12;
+      const wv = clamp(w + Math.sin(phase) * .25, 0, 10);
+      const hv = clamp(60 + Math.sin(phase * .7) * 12, 30, 95);
+      const tv = clamp(26 + Math.sin(phase * .4) * 3, 18, 40);
+      const nv = clamp(.85 - (d / 150) + Math.sin(phase * .5) * .02, .15, .95);
+      document.getElementById('vw').textContent = wv.toFixed(1) + ' m/s';
+      document.getElementById('vh').textContent = Math.round(hv) + '%';
+      document.getElementById('vt').textContent = tv.toFixed(1) + '°C';
+      document.getElementById('vn').textContent = nv.toFixed(2);
+      document.getElementById('bw').style.width = clamp(wv * 10, 2, 100) + '%';
+      document.getElementById('bh').style.width = Math.round(hv) + '%';
+      document.getElementById('bt2').style.width = ((tv - 15) / 30 * 100).toFixed(0) + '%';
+      document.getElementById('bn').style.width = (nv * 100).toFixed(0) + '%';
+      document.getElementById('batt-hdr').textContent = Math.round(battery) + '%';
+    }
+
+    function updateBayes() {
+      const vis = farm.filter(c => c.visited);
+      if (!vis.length) return;
+      const dRate = vis.filter(c => c.dose > 4).length / vis.length;
+      const avgD = vis.reduce((s, c) => s + c.disc, 0) / vis.length;
+      const prob = clamp(dRate * .6 + (avgD / 100) * .4, 0, .98);
+      const pct = Math.round(prob * 100);
+      document.getElementById('bprob').textContent = pct + '%';
+      document.getElementById('bfill').style.width = pct + '%';
+      let col, msg;
+      if (prob < .25) { col = '#3d8b41'; msg = 'Low risk — continue routine monitoring'; }
+      else if (prob < .55) { col = '#b8941e'; msg = 'Moderate risk — schedule preventive scan'; }
+      else if (prob < .80) { col = '#c96a20'; msg = 'High risk — prioritize zone treatment'; }
+      else { col = '#b83232'; msg = 'Critical — P(Outbreak)>0.80, deploy full swarm'; }
+      document.getElementById('bfill').style.background = col;
+      document.getElementById('bvrd').textContent = msg;
+      document.getElementById('bvrd').style.color = col;
+    }
+
+    function addLog(msg, cls = '') {
+      const el = document.getElementById('loge');
+      const m = String(Math.floor(logSec / 60)).padStart(2, '0');
+      const s = String(logSec % 60).padStart(2, '0');
+      const e = document.createElement('div'); e.className = 'le';
+      e.innerHTML = `<span class="lt">${m}:${s}</span><span class="lm ${cls}">${msg}</span>`;
+      el.insertBefore(e, el.firstChild);
+      while (el.children.length > 60) el.removeChild(el.lastChild);
+    }
+
+    function step() {
+      if (!running || paused) return;
+      logSec++; battery = Math.max(12, 100 - (curCell / TOT) * 82);
+      if (curCell > 0) renderCell(path[curCell - 1], false);
+      if (curCell >= TOT) {
+        running = false;
+        document.getElementById('mbadge').className = 'badge bcmp';
+        document.getElementById('mbadge').textContent = 'COMPLETE';
+        document.getElementById('bst').disabled = false;
+        document.getElementById('bpa').disabled = true;
+        clearInterval(interval);
+        addLog('Mission complete — all 70 cells surveyed.', 's');
+        addLog('Total pesticide: ' + (pestUsed / 1000).toFixed(2) + 'L | Diseased cells: ' + diseased, 'i');
+        return;
+      }
+      const idx = path[curCell], f = farm[idx], r = fuzzy(f.disc, f.wind);
+      f.visited = true; f.skip = !r.ok; f.dose = r.ok ? r.dose : 0;
+      if (f.dose > 0) pestUsed += f.dose * 25;
+      if (f.dose > 4) diseased++;
+      renderCell(idx, true);
+      document.getElementById('prog').textContent = (curCell + 1) + '/70';
+      document.getElementById('dcount').textContent = diseased;
+      document.getElementById('pused').textContent = (pestUsed / 1000).toFixed(2) + ' L';
+      updateSensors(f.wind, f.disc); updateBayes();
+      document.getElementById('dsl').value = f.disc;
+      document.getElementById('wsl').value = f.wind;
+      updateFuzzy();
+      const row = Math.floor(idx / C) + 1, col = idx % C + 1, tag = `[R${row}C${col}]`;
+      if (!r.ok) addLog(tag + ' Wind abort (' + f.wind + ' m/s) — spraying skipped', 'w');
+      else if (f.disc > 60) addLog(tag + ' SEVERE infection ' + f.disc + '% | Dose: ' + r.dose.toFixed(1) + ' ml/m²', 'd');
+      else if (f.disc > 30) addLog(tag + ' ' + r.sev + ' infection ' + f.disc + '% | Dose: ' + r.dose.toFixed(1) + ' ml/m²', 'w');
+      else if (f.dose > 0) addLog(tag + ' Treated | ' + r.sev + ' (' + f.disc + '%) | ' + r.dose.toFixed(1) + ' ml/m²', 's');
+      else addLog(tag + ' Healthy — no treatment needed');
+      curCell++;
+    }
+
+    function startMission() {
+      if (running) return;
+      curCell = 0; pestUsed = 0; diseased = 0; battery = 100; logSec = 0;
+      buildGrid();
+      for (let i = 0; i < TOT; i++) {
+        const r2 = Math.random();
+        let d2 = r2 < .44 ? rnd(0, 12) : r2 < .70 ? rnd(10, 30) : r2 < .86 ? rnd(28, 55) : r2 < .94 ? rnd(50, 72) : rnd(68, 95);
+        farm[i].disc = Math.round(d2); farm[i].wind = parseFloat(rnd(.4, 7).toFixed(1));
+        farm[i].visited = false; farm[i].dose = 0; farm[i].skip = false;
+      }
+      running = true; paused = false;
+      document.getElementById('mbadge').className = 'badge bact';
+      document.getElementById('mbadge').textContent = 'ACTIVE';
+      document.getElementById('bst').disabled = true;
+      document.getElementById('bpa').disabled = false;
+      document.getElementById('bpa').textContent = 'Pause';
+      addLog('Mission started — drone departing from (0,0)', 'i');
+      addLog('Boustrophedon path active | A* re-routing on obstacle detect', 'i');
+      interval = setInterval(step, 620);
+    }
+
+    function pauseMission() {
+      if (!running) return; paused = !paused;
+      if (paused) {
+        clearInterval(interval);
+        document.getElementById('mbadge').className = 'badge bpau';
+        document.getElementById('mbadge').textContent = 'PAUSED';
+        document.getElementById('bpa').textContent = 'Resume';
+        addLog('Mission paused by operator', 'w');
+      } else {
+        document.getElementById('mbadge').className = 'badge bact';
+        document.getElementById('mbadge').textContent = 'ACTIVE';
+        document.getElementById('bpa').textContent = 'Pause';
+        addLog('Mission resumed', 'i');
+        interval = setInterval(step, 620);
+      }
+    }
+
+    function resetMission() {
+      clearInterval(interval); running = false; paused = false; curCell = 0;
+      pestUsed = 0; diseased = 0; battery = 100; logSec = 0; phase = 0;
+      buildGrid();
+      document.getElementById('mbadge').className = 'badge bidl';
+      document.getElementById('mbadge').textContent = 'STANDBY';
+      document.getElementById('bst').disabled = false;
+      document.getElementById('bpa').disabled = true;
+      document.getElementById('bpa').textContent = 'Pause';
+      document.getElementById('prog').textContent = '0/70';
+      document.getElementById('dcount').textContent = '0';
+      document.getElementById('pused').textContent = '0.0 L';
+      document.getElementById('batt-hdr').textContent = '100%';
+      document.getElementById('bprob').textContent = '—';
+      document.getElementById('bfill').style.width = '0%';
+      document.getElementById('bvrd').textContent = 'Awaiting field data…';
+      document.getElementById('bvrd').style.color = 'var(--text3)';
+      document.getElementById('loge').innerHTML =
+        '<div class="le"><span class="lt">00:00</span><span class="lm i">System reset. Ready for new mission.</span></div>';
+    }
+  </script>
+</body>
+
+</html>
